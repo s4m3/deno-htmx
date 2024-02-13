@@ -1,4 +1,7 @@
-const PORT: number = 8080;
+import renderToString from "preact-render-to-string";
+import Home from "./Home.jsx";
+
+const PORT = 8000;
 
 let counter = 0;
 
@@ -28,6 +31,8 @@ const addRoute = (
   routes[method].push({ pattern: new URLPattern({ pathname }), handler });
 };
 
+const render = (Comp) => renderToString(Comp());
+
 const route = async (request: Request) => {
   for (const r of routes[request.method]) {
     if (r.pattern.test(request.url)) {
@@ -41,22 +46,18 @@ const route = async (request: Request) => {
 const handleHome = async () => {
   const body = new TextEncoder().encode(`
 <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
-    <div>
-        <h1>My first deno server</h1>
-<button hx-post="/clicked"
-    hx-trigger="click"
->
-    Click Me!
-</button>
-<a hx-post="/click" hx-swap="outerHTML">Click this!</a>
-    </div>
+${render(Home)}
 `);
   return new Response(body);
 };
 
 addRoute(Method.GET, "/", handleHome);
-addRoute(Method.POST, "/clicked", async () => new Response(`${++counter}`));
+addRoute(
+  Method.GET,
+  "/counter",
+  async () => new Response(`<div>${counter}</div>`),
+);
+addRoute(Method.POST, "/increase", async () => new Response(`${++counter}`));
 addRoute(Method.POST, "/click", async () => new Response("<div>change</div>"));
 
-console.log(`HTTP server running. Access it at: http://localhost:${PORT}/`);
-Deno.serve({ port }, route);
+Deno.serve({ PORT }, route);
